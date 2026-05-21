@@ -94,6 +94,23 @@ config ZMK_KSCAN_CHARLIEPLEX_WAIT_BETWEEN_OUTPUTS
         scenario, set this value to a positive value to configure the number of
         usecs to wait after reading each column of keys.
 
+config ZMK_KSCAN_CHARLIEPLEX_DEBUG_SCAN_RATE
+    bool "Log charlieplex kscan scan rate"
+    default n
+    depends on LOG
+    help
+        Periodically logs the effective scan rate (Hz) from the charlieplex
+        kscan driver.
+
+config ZMK_KSCAN_CHARLIEPLEX_DEBUG_SCAN_RATE_INTERVAL_MS
+    int "Charlieplex scan rate logging interval (ms)"
+    default 1000
+    range 100 60000
+    depends on ZMK_KSCAN_CHARLIEPLEX_DEBUG_SCAN_RATE
+    help
+        Time window for scan-rate logging. The driver reports scans per second
+        averaged over this interval.
+
 endif # ZMK_KSCAN_GPIO_CHARLIEPLEX
 
 config ZMK_KSCAN_MOCK_DRIVER
