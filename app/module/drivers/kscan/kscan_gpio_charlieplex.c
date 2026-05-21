@@ -49,6 +49,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define USES_INTERRUPT DT_INST_FOREACH_STATUS_OKAY(WITH_INTR) > 0
 
 #define COND_ANY_POLLING(code) COND_CODE_1(USES_POLLING, code, ())
+#define COND_THIS_POLLING(n, code) COND_CODE_0(INST_INTR_DEFINED(n), code, ())
 #define COND_THIS_INTERRUPT(n, code) COND_CODE_1(INST_INTR_DEFINED(n), code, ())
 
 #define KSCAN_INTR_CFG_INIT(inst_idx) GPIO_DT_SPEC_GET(DT_DRV_INST(inst_idx), interrupt_gpios)
@@ -457,7 +458,7 @@ static const struct kscan_driver_api kscan_charlieplex_api = {
                 .debounce_release_ms = INST_DEBOUNCE_RELEASE_MS(n),                                \
             },                                                                                     \
         .debounce_scan_period_ms = DT_INST_PROP(n, debounce_scan_period_ms),                       \
-        COND_ANY_POLLING((.poll_period_ms = DT_INST_PROP(n, poll_period_ms), ))                    \
+        COND_THIS_POLLING(n, (.poll_period_ms = DT_INST_PROP(n, poll_period_ms), ))                \
             COND_THIS_INTERRUPT(n, (.use_interrupt = INST_INTR_DEFINED(n), ))                      \
                 COND_THIS_INTERRUPT(n, (.interrupt = KSCAN_INTR_CFG_INIT(n), ))};                  \
                                                                                                    \
