@@ -40,6 +40,9 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define KSCAN_GPIO_CFG_INIT(idx, inst_idx)                                                         \
     GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst_idx), gpios, idx)
 
+#define INST_INVERT_EVENT_COORDINATES(n)                                                          \
+    ((DT_INST_GPIO_FLAGS_BY_IDX(n, gpios, 0) & GPIO_ACTIVE_LOW) == GPIO_ACTIVE_LOW)
+
 #define INST_INTR_DEFINED(n) DT_INST_NODE_HAS_PROP(n, interrupt_gpios)
 
 #define WITH_INTR(n) COND_CODE_1(INST_INTR_DEFINED(n), (+1), (+0))
@@ -81,6 +84,7 @@ struct kscan_charlieplex_config {
     struct zmk_debounce_config debounce_config;
     int32_t debounce_scan_period_ms;
     int32_t poll_period_ms;
+    bool invert_event_coordinates;
     bool use_interrupt;
     const struct gpio_dt_spec interrupt;
 };
@@ -286,9 +290,12 @@ static int kscan_charlieplex_read(const struct device *dev) {
             // setup, we can update in the same loop.
             if (zmk_debounce_get_changed(state)) {
                 const bool pressed = zmk_debounce_is_pressed(state);
+                const int event_row = config->invert_event_coordinates ? col : row;
+                const int event_col = config->invert_event_coordinates ? row : col;
 
-                LOG_DBG("Sending event at %i,%i state %s", row, col, pressed ? "on" : "off");
-                data->callback(dev, row, col, pressed);
+                LOG_DBG("Sending event at %i,%i state %s", event_row, event_col,
+                        pressed ? "on" : "off");
+                data->callback(dev, event_row, event_col, pressed);
             }
             continue_scan = continue_scan || zmk_debounce_is_active(state);
         }
@@ -458,6 +465,7 @@ static const struct kscan_driver_api kscan_charlieplex_api = {
                 .debounce_release_ms = INST_DEBOUNCE_RELEASE_MS(n),                                \
             },                                                                                     \
         .debounce_scan_period_ms = DT_INST_PROP(n, debounce_scan_period_ms),                       \
+        .invert_event_coordinates = INST_INVERT_EVENT_COORDINATES(n),                              \
         COND_THIS_POLLING(n, (.poll_period_ms = DT_INST_PROP(n, poll_period_ms), ))                \
             COND_THIS_INTERRUPT(n, (.use_interrupt = INST_INTR_DEFINED(n), ))                      \
                 COND_THIS_INTERRUPT(n, (.interrupt = KSCAN_INTR_CFG_INIT(n), ))};                  \
